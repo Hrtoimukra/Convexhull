@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://lukakalinovcic.github.io/geodeb/main.js"></script>
+</head>
+<body>
+  <div id="rootElement"></div>
+</body>
+<script type="text/javascript">
+resourcePath = 'https://lukakalinovcic.github.io/geodeb/';
+jsonData = 
+{
+  "source_code": [
+    "#include \u0022geodeb.h\u0022\u000a",
+    "\u000a",
+    "#include<iostream>\u000a",
+    "#include<vector>\u000a",
+    "#include<algorithm>  \u000a",
+    "#include<chrono>\u000a",
+    "#include<ctime>\u000a",
+    "\u000a",
+    "#define LEFT -1\u000a",
+    "#define RIGHT 1\u000a",
+    "#define COLL  0\u000a",
+    "\u000a",
+    "typedef struct point{\u000a",
+    "        int x;\u000a",
+    "        int y;\u000a",
+    "        bool operator <(point b){\u000a",
+    "             if(y!=b.y)\u000a",
+    "               return y < b.y;\u000a",
+    "             return  x < b.x;  \u0009\u000a",
+    "        }\u0009\u000a",
+    "}point;\u000a",
+    "\u000a",
+    "point pivot;\u000a",
+    "\u000a",
+    "void display_top_two(std::vector<point>& convex_hull){\u000a",
+    "     std::cout<<\u0022Stack top two points\u0022<<std::endl; \u000a",
+    "     std::cout<<convex_hull[convex_hull.size()-1].x<<\u0022 \u0022<<convex_hull[convex_hull.size()-1].y<<std::endl;\u000a",
+    "     std::cout<<convex_hull[convex_hull.size()-2].x<<\u0022 \u0022<<convex_hull[convex_hull.size()-2].y<<std::endl; \u000a",
+    "}\u000a",
+    "\u000a",
+    "void display_sorted_points(std::vector<point>& points){\u000a",
+    "     std::cout<<\u0022Sorted Points\u0022<<std::endl;\u000a",
+    "     for(int i=0;i<points.size();++i)\u000a",
+    "        std::cout<<points[i].x<<\u0022 \u0022<<points[i].y<<std::endl; \u000a",
+    "}\u000a",
+    "\u000a",
+    "void display_point(point p){\u000a",
+    "     std::cout<<p.x<<\u0022 \u0022<<p.y<<std::endl;\u000a",
+    "}\u000a",
+    "\u000a",
+    "void display_convex_hull(std::vector<point>& convex_hull){\u000a",
+    "     std::cout<<\u0022 Convex Hull in counterclockwise direction\u0022<<std::endl;\u000a",
+    "     int n=convex_hull.size();\u000a",
+    "     for(int i=0;i<n;++i)\u000a",
+    "         std::cout<<convex_hull[i].x<<\u0022 \u0022<<convex_hull[i].y<<std::endl;      \u000a",
+    "}\u000a",
+    "\u000a",
+    "int make_turn(point a,point b,point c){\u000a",
+    "\u0009int cp=(b.x-a.x)*(c.y-a.y)-(c.x-a.x)*(b.y-a.y);\u000a",
+    "\u000a",
+    "    std::cout<<\u0022Top two of the stack\u0022<<std::endl;\u000a",
+    "    display_point(b);\u000a",
+    "    display_point(a);\u000a",
+    "\u000a",
+    "    std::cout<<\u0022Third point\u0022<<std::endl;\u000a",
+    "    display_point(c);\u000a",
+    "\u000a",
+    "    std::cout<<\u0022Cross Product of the points=\u0022<<cp<<std::endl; \u000a",
+    "\u000a",
+    "\u0009if(cp>0)\u000a",
+    "\u0009  return LEFT;\u000a",
+    "\u0009else if(cp<0)\u000a",
+    "\u0009  return RIGHT;\u000a",
+    "\u0009else\u000a",
+    "\u0009  return COLL;          \u000a",
+    "}\u000a",
+    "\u000a",
+    "int sqre_dist(point a,point b){\u000a",
+    "    int dx=b.x-a.x;\u000a",
+    "    int dy=b.y-a.y;\u000a",
+    "    return dx*dx+dy*dy;\u000a",
+    "}\u000a",
+    "\u000a",
+    "bool rotational_sweep(point a,point b){\u000a",
+    "     int turn=make_turn(pivot,a,b);\u000a",
+    "     if(turn==0)\u000a",
+    "     \u0009return sqre_dist(pivot,a) < sqre_dist(pivot,b);\u000a",
+    "     if(turn==LEFT)\u000a",
+    "        return true;\u000a",
+    "     else\u000a",
+    "        return false;      \u0009  \u000a",
+    "}\u000a",
+    "\u000a",
+    "int get_lowest_point(std::vector<point>& points){\u000a",
+    "    int n=points.size();\u000a",
+    "    int low=0;\u000a",
+    "    for(int i=1;i<n;++i){\u000a",
+    "        if(points[i]<points[low])\u000a",
+    "           low=i;  \u0009\u000a",
+    "    }\u000a",
+    "    return low;\u000a",
+    "}\u000a",
+    "\u000a",
+    "std::vector<point> graham_scan(std::vector<point>& points){\u000a",
+    "    std::vector<point> convex_hull;\u000a",
+    "    int n=points.size();\u000a",
+    "\u000a",
+    "    if(n<3)\u000a",
+    "       return convex_hull;\u000a",
+    "    \u000a",
+    "    int low=get_lowest_point(points);\u000a",
+    "    \u000a",
+    "    point temp=points[0];\u000a",
+    "    points[0]=points[low];\u000a",
+    "    points[low]=temp;\u000a",
+    "\u000a",
+    "    pivot=points[0];\u000a",
+    "\u000a",
+    "    std::cout<<\u0022The Pivot point \u0022<<pivot.x<<\u0022 \u0022<<pivot.y<<std::endl;\u000a",
+    "   \u000a",
+    "    sort(points.begin()+1,points.end(),rotational_sweep);\u000a",
+    "\u000a",
+    "    convex_hull.push_back(points[0]);\u000a",
+    "    convex_hull.push_back(points[1]);\u000a",
+    "    convex_hull.push_back(points[2]);\u000a",
+    "\u000a",
+    "    display_sorted_points(points); \u000a",
+    "\u000a",
+    "    for(int i=3;i<n;++i){\u000a",
+    "        while(convex_hull.size()>1 && make_turn(convex_hull[convex_hull.size()-2],convex_hull[convex_hull.size()-1],points[i])!=LEFT){\u000a",
+    "              //dispplay_top_two(convex_hull);\u000a",
+    "              convex_hull.pop_back(); \u000a",
+    "        }\u000a",
+    "        convex_hull.push_back(points[i]);   \u000a",
+    "        //display_top_two(convex_hull);   \u000a",
+    "    } \u000a",
+    "\u000a",
+    "    display_convex_hull(convex_hull);\u000a",
+    "    return convex_hull;   \u000a",
+    "}\u000a",
+    "\u000a",
+    "\u000a",
+    "void runTests(int numTests, int numPoints) {\u000a",
+    "    std::vector<point> points;\u000a",
+    "    std::srand(std::time(0));\u000a",
+    "\u000a",
+    "    for (int i = 0; i < numPoints; i++) \u000a",
+    "        points.push_back({static_cast<int>(std::rand() % 1000), static_cast<int>(std::rand() % 1000)});\u000a",
+    "    \u000a",
+    "    auto start = std::chrono::high_resolution_clock::now();\u000a",
+    "\u000a",
+    "    GD_INIT(\u0022debug.html\u0022); \u000a",
+    "\u000a",
+    "    for(int i=0;i<points.size();++i)\u000a",
+    "       GD_POINT(points[i].x,points[i].y);\u000a",
+    " \u000a",
+    "    GD_PAUSE();\u000a",
+    "    std::vector<point> ch;    \u000a",
+    "     \u000a",
+    "    ch=graham_scan(points);\u000a",
+    "\u000a",
+    "    for(int i=0;i<ch.size()-1;++i)\u000a",
+    "       GD_SEGMENT(ch[i].x,ch[i].y,ch[i+1].x,ch[i+1].y);\u000a",
+    "       \u000a",
+    "    GD_SEGMENT(ch[ch.size()-1].x,ch[ch.size()-1].y,ch[0].x,ch[0].y);     \u000a",
+    "\u000a",
+    "\u000a",
+    "   // for (int i = 0; i < numTests; i++)\u000a",
+    "        //graham_scan(points);\u000a",
+    "\u000a",
+    "    auto end = std::chrono::high_resolution_clock::now();\u000a",
+    "\u000a",
+    "    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();\u000a",
+    "    std::cout << \u0022CPU Time: \u0022 << duration << \u0022ms\u0022 << std::endl;\u000a",
+    "}\u000a",
+    "\u000a",
+    "int main(int argc,char **argv){\u000a",
+    "\u000a",
+    "    int numTests=100;\u000a",
+    "    int numPoints=1000000; \u000a",
+    "\u000a",
+    "    runTests(1,100);   \u000a",
+    "  \u000a",
+    "    std::vector<point> points={{1,0},{2,0},{3,0},{4,0},{5,0},{5,5},{4,4},{3,3},{2,2},{1,1}};\u000a",
+    "     \u000a",
+    "\u000a",
+    "    return 0;             \u000a",
+    "}\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    "\u000a",
+    " \u000a",
+    "\u000a",
+    "\u000a"
+  ],
+  "root": {
+    "type": "begin",
+    "line": 142,
+    "children": [
+      {
+        "type": "point",
+        "line": 145,
+        "x": 314.000000,
+        "y": 98.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 783.000000,
+        "y": 252.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 452.000000,
+        "y": 981.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 829.000000,
+        "y": 877.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 269.000000,
+        "y": 561.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 13.000000,
+        "y": 103.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 314.000000,
+        "y": 56.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 443.000000,
+        "y": 841.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 402.000000,
+        "y": 348.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 980.000000,
+        "y": 103.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 797.000000,
+        "y": 548.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 661.000000,
+        "y": 2.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 488.000000,
+        "y": 905.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 972.000000,
+        "y": 421.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 382.000000,
+        "y": 973.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 272.000000,
+        "y": 49.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 423.000000,
+        "y": 408.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 653.000000,
+        "y": 228.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 389.000000,
+        "y": 482.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 105.000000,
+        "y": 658.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 44.000000,
+        "y": 119.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 114.000000,
+        "y": 710.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 527.000000,
+        "y": 909.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 551.000000,
+        "y": 930.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 257.000000,
+        "y": 531.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 385.000000,
+        "y": 54.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 431.000000,
+        "y": 46.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 56.000000,
+        "y": 919.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 951.000000,
+        "y": 381.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 341.000000,
+        "y": 685.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 706.000000,
+        "y": 965.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 86.000000,
+        "y": 130.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 373.000000,
+        "y": 739.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 358.000000,
+        "y": 115.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 222.000000,
+        "y": 815.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 125.000000,
+        "y": 618.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 286.000000,
+        "y": 239.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 328.000000,
+        "y": 166.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 148.000000,
+        "y": 231.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 96.000000,
+        "y": 405.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 762.000000,
+        "y": 481.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 812.000000,
+        "y": 193.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 879.000000,
+        "y": 220.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 112.000000,
+        "y": 182.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 601.000000,
+        "y": 805.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 219.000000,
+        "y": 308.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 123.000000,
+        "y": 306.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 438.000000,
+        "y": 496.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 45.000000,
+        "y": 148.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 611.000000,
+        "y": 619.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 315.000000,
+        "y": 737.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 589.000000,
+        "y": 954.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 328.000000,
+        "y": 269.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 120.000000,
+        "y": 477.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 500.000000,
+        "y": 568.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 234.000000,
+        "y": 262.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 401.000000,
+        "y": 46.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 807.000000,
+        "y": 280.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 267.000000,
+        "y": 272.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 814.000000,
+        "y": 868.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 77.000000,
+        "y": 385.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 176.000000,
+        "y": 200.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 691.000000,
+        "y": 966.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 49.000000,
+        "y": 737.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 114.000000,
+        "y": 12.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 708.000000,
+        "y": 782.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 101.000000,
+        "y": 298.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 736.000000,
+        "y": 430.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 567.000000,
+        "y": 856.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 259.000000,
+        "y": 68.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 424.000000,
+        "y": 493.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 682.000000,
+        "y": 825.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 892.000000,
+        "y": 490.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 457.000000,
+        "y": 159.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 762.000000,
+        "y": 623.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 379.000000,
+        "y": 191.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 8.000000,
+        "y": 556.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 744.000000,
+        "y": 700.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 874.000000,
+        "y": 145.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 789.000000,
+        "y": 341.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 157.000000,
+        "y": 497.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 123.000000,
+        "y": 259.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 147.000000,
+        "y": 859.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 689.000000,
+        "y": 715.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 67.000000,
+        "y": 300.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 135.000000,
+        "y": 491.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 145.000000,
+        "y": 169.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 668.000000,
+        "y": 37.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 659.000000,
+        "y": 477.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 548.000000,
+        "y": 773.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 100.000000,
+        "y": 928.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 317.000000,
+        "y": 108.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 836.000000,
+        "y": 61.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 160.000000,
+        "y": 710.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 206.000000,
+        "y": 949.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 51.000000,
+        "y": 715.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 799.000000,
+        "y": 174.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 974.000000,
+        "y": 946.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 385.000000,
+        "y": 15.000000
+      },
+      {
+        "type": "point",
+        "line": 145,
+        "x": 13.000000,
+        "y": 452.000000
+      },
+      {
+        "type": "break",
+        "line": 147
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 661.000000,
+        "y1": 2.000000,
+        "x2": 980.000000,
+        "y2": 103.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 980.000000,
+        "y1": 103.000000,
+        "x2": 974.000000,
+        "y2": 946.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 974.000000,
+        "y1": 946.000000,
+        "x2": 706.000000,
+        "y2": 965.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 706.000000,
+        "y1": 965.000000,
+        "x2": 691.000000,
+        "y2": 966.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 691.000000,
+        "y1": 966.000000,
+        "x2": 452.000000,
+        "y2": 981.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 452.000000,
+        "y1": 981.000000,
+        "x2": 382.000000,
+        "y2": 973.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 382.000000,
+        "y1": 973.000000,
+        "x2": 206.000000,
+        "y2": 949.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 206.000000,
+        "y1": 949.000000,
+        "x2": 100.000000,
+        "y2": 928.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 100.000000,
+        "y1": 928.000000,
+        "x2": 56.000000,
+        "y2": 919.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 56.000000,
+        "y1": 919.000000,
+        "x2": 8.000000,
+        "y2": 556.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 8.000000,
+        "y1": 556.000000,
+        "x2": 13.000000,
+        "y2": 103.000000
+      },
+      {
+        "type": "segment",
+        "line": 153,
+        "x1": 13.000000,
+        "y1": 103.000000,
+        "x2": 114.000000,
+        "y2": 12.000000
+      },
+      {
+        "type": "segment",
+        "line": 155,
+        "x1": 114.000000,
+        "y1": 12.000000,
+        "x2": 661.000000,
+        "y2": 2.000000
+      }
+    ]
+  },
+  "theme": "light"
+};
+init(resourcePath);
+</script>
+</html>
