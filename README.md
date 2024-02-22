@@ -5,4 +5,4 @@ Every program randomly generates set of 2D points and computes the convex hull.E
 ![divide_conquer](https://github.com/Hrtoimukra/Convexhull/assets/30091580/10cc7592-dd1b-4f5f-b6f4-35a127c0b096)
 ![Graham_scan](https://github.com/Hrtoimukra/Convexhull/assets/30091580/174d010c-1025-437e-a764-8e901d04b1ab)
 ![quick_hull](https://github.com/Hrtoimukra/Convexhull/assets/30091580/fd9445c1-1072-4a70-b829-fa0807835c4c)
-![ConvexHullRandomPoints](https://github.com/Hrtoimukra/Convexhull/assets/30091580/df6291a9-1014-4a4a-8765-f9f039261ef9)
+
